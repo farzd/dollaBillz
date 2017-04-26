@@ -1,90 +1,95 @@
 const electron = require('electron')
 const path = require('path')
 const url = require('url')
-const moment = require('moment');
 
-// Module to control application life.
-const iconPath = path.join(__dirname, 'oval@2x.png');
-let appIcon = null;
 const app = electron.app
-// Module to create native browser window.
-//const BrowserWindow = electron.BrowserWindow
-// Keep a global reference of the window object, if you don't, the window will
-// be closed automatically when the JavaScript object is garbage collected.
+const iconPath = path.join(__dirname, 'oval@2x.png');
 let mainWindow
-let totalDayRate = 400;
-let startTime = 10;
-let endTime = 18;
-let totalHours = Math.abs(startTime - endTime);
-let perHourRate = totalDayRate / totalHours;
-let perMinuteRate = perHourRate / 60;
-//let hoursWorked = Math.abs(startTime - timeNow);
+let appIcon = null;
 
+const totalDayRate = 400;
+const startTime = 10;
+const endTime = 18;
+const totalHours = Math.abs(startTime - endTime);
+const perHourRate = totalDayRate / totalHours;
+const perMinuteRate = perHourRate / 60;
 
-function createWindow () {
-  // Create the browser window.
-  appIcon = new electron.Tray(iconPath);
+function getDoller() {
+  const now = new Date();
+  const hours = now.getHours();
+  const mins = now.getMinutes();
 
-var now = new Date();
-var hours = now.getHours();
+  const elpasedHours = Math.abs(startTime - hours);
+  const madeHoursSoFar = elpasedHours * perHourRate;
+  const madeMinutesSoFar = mins * perMinuteRate;
 
-if(hours <= endTime) {
-    setInterval(function () {
-
-var now = new Date();
-var hours = now.getHours();
-
-var mins = now.getMinutes();
-
-var elpasedHours = Math.abs(startTime - hours);
-var madeHoursSoFar = elpasedHours * perHourRate;
-var madeMinutesSoFar = mins * perMinuteRate;
-
-  appIcon.setTitle('£' + (madeHoursSoFar + madeMinutesSoFar).toFixed(2));
-
-
-    }, 10000);
- 
+  return (madeHoursSoFar + madeMinutesSoFar).toFixed(2);
 }
 
+function createWindow() {
+  appIcon = new electron.Tray(iconPath);
+  appIcon.setTitle('£' + getDoller());
 
- var contextMenu = electron.Menu.buildFromTemplate([
-    {
-      label: 'Item3',
-      type: 'radio',
-      checked: true
+  const now = new Date();
+  const hours = now.getHours();
+
+  if (hours <= endTime) {
+    setInterval(function () {
+      appIcon.setTitle('£' + getDoller());
+    }, 10000);
+  }
+
+  let viewFlag = 1;
+  const contextMenu = electron.Menu.buildFromTemplate([{
+      label: 'hide/show',
+      click: function () {
+        if (viewFlag == 1) {
+          viewFlag = 0;
+          return appIcon.setTitle('');
+        }
+        viewFlag = 1;
+        return appIcon.setTitle('£' + getDoller());
+      }
     },
-    { label: 'Quit',
+    {
+      label: 'config',
+      click: function () {
+         makeSettingsWindow();
+      }
+    },
+    {
+      label: 'Quit',
       accelerator: 'Command+Q',
       selector: 'terminate:',
     }
   ]);
 
-
-
-  appIcon.setToolTip('This is my application.');
   appIcon.setContextMenu(contextMenu);
+}
 
+function makeSettingsWindow() {
+  mainWindow = new electron.BrowserWindow({
+    width: 800,
+    height: 600
+  })
 
-  // mainWindow = new BrowserWindow({width: 800, height: 600})
-
-  // // and load the index.html of the app.
-  // mainWindow.loadURL(url.format({
-  //   pathname: path.join(__dirname, 'index.html'),
-  //   protocol: 'file:',
-  //   slashes: true
-  // }))
+  // and load the index.html of the app.
+  mainWindow.loadURL(url.format({
+    pathname: path.join(__dirname, 'index.html'),
+    protocol: 'file:',
+    slashes: true
+  }))
 
   // Open the DevTools.
-  // mainWindow.webContents.openDevTools()
+  //mainWindow.webContents.openDevTools()
 
   // Emitted when the window is closed.
-  // mainWindow.on('closed', function () {
-  //   // Dereference the window object, usually you would store windows
-  //   // in an array if your app supports multi windows, this is the time
-  //   // when you should delete the corresponding element.
-  // //  mainWindow = null
-  // })
+  mainWindow.on('closed', function () {
+    // Dereference the window object, usually you would store windows
+    // in an array if your app supports multi windows, this is the time
+    // when you should delete the corresponding element.
+    //  mainWindow = null
+  })
 }
 
 // This method will be called when Electron has finished
