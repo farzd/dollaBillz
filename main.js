@@ -1,20 +1,35 @@
 const electron = require('electron')
 const path = require('path')
 const url = require('url')
-
+const ipc = require('electron').ipcMain;
 const app = electron.app
 const iconPath = path.join(__dirname, 'oval@2x.png');
+const Config = require('electron-config');
+const config = new Config();
 let mainWindow
 let appIcon = null;
 
-const totalDayRate = 400;
-const startTime = 10;
-const endTime = 18;
-const totalHours = Math.abs(startTime - endTime);
-const perHourRate = totalDayRate / totalHours;
-const perMinuteRate = perHourRate / 60;
+
+function getLocalStorage() {
+  return config.get('dolla');
+}
+
+function setLocalStorage(obj) {
+  config.set('dolla', obj);
+}
+
+let globalEndTime = 18;
 
 function getDoller() {
+  const storage = getLocalStorage() || {};
+  let totalDayRate = storage.dailyrate || 400;
+  let startTime = storage.starttime  || 10;
+  let endTime = storage.endtime || 18;
+  globalEndTime = storage.endtime || 18;
+  const totalHours = Math.abs(startTime - endTime);
+  const perHourRate = totalDayRate / totalHours;
+  const perMinuteRate = perHourRate / 60;
+
   const now = new Date();
   const hours = now.getHours();
   const mins = now.getMinutes();
@@ -26,14 +41,15 @@ function getDoller() {
   return (madeHoursSoFar + madeMinutesSoFar).toFixed(2);
 }
 
+ 
+
 function createWindow() {
   appIcon = new electron.Tray(iconPath);
   appIcon.setTitle('£' + getDoller());
 
   const now = new Date();
   const hours = now.getHours();
-
-  if (hours <= endTime) {
+  if (hours <= globalEndTime) {
     setInterval(function () {
       appIcon.setTitle('£' + getDoller());
     }, 10000);
@@ -65,12 +81,21 @@ function createWindow() {
   ]);
 
   appIcon.setContextMenu(contextMenu);
+
+  ipc.on('invokeAction', function(event, data){
+      //var result = processData(data);
+      console.log(data);
+      setLocalStorage(data);
+      appIcon.setTitle('£' + getDoller());
+      //event.sender.send('actionReply', result);
+  });  
 }
 
 function makeSettingsWindow() {
   mainWindow = new electron.BrowserWindow({
-    width: 800,
-    height: 600
+    width: 300,
+    height: 300,
+    title: 'config'
   })
 
   // and load the index.html of the app.
@@ -80,8 +105,10 @@ function makeSettingsWindow() {
     slashes: true
   }))
 
-  // Open the DevTools.
-  //mainWindow.webContents.openDevTools()
+  mainWindow.webContents.on('did-finish-load', () => {
+    mainWindow.webContents.send('info', 'whoooooooh!')
+  });
+
 
   // Emitted when the window is closed.
   mainWindow.on('closed', function () {
