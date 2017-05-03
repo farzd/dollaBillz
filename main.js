@@ -2,56 +2,23 @@ const electron = require('electron')
 const path = require('path')
 const url = require('url')
 const ipc = require('electron').ipcMain;
+const localStorage = require('./modules/storage');
+const time = require('./modules/date');
 const app = electron.app
 const iconPath = path.join(__dirname, 'oval@2x.png');
-const Config = require('electron-config');
-const config = new Config();
 let mainWindow
 let appIcon = null;
 
 
-function getLocalStorage() {
-  return config.get('dolla');
-}
-
-function setLocalStorage(obj) {
-  config.set('dolla', obj);
-}
-
-let globalEndTime = 18;
-
-function getDoller() {
-  const storage = getLocalStorage() || {};
-  let totalDayRate = storage.dailyrate || 400;
-  let startTime = storage.starttime  || 10;
-  let endTime = storage.endtime || 18;
-  globalEndTime = storage.endtime || 18;
-  const totalHours = Math.abs(startTime - endTime);
-  const perHourRate = totalDayRate / totalHours;
-  const perMinuteRate = perHourRate / 60;
-
-  const now = new Date();
-  const hours = now.getHours();
-  const mins = now.getMinutes();
-
-  const elpasedHours = Math.abs(startTime - hours);
-  const madeHoursSoFar = elpasedHours * perHourRate;
-  const madeMinutesSoFar = mins * perMinuteRate;
-
-  return (madeHoursSoFar + madeMinutesSoFar).toFixed(2);
-}
-
- 
-
 function createWindow() {
   appIcon = new electron.Tray(iconPath);
-  appIcon.setTitle('£' + getDoller());
+  appIcon.setTitle('£' + time.getRate());
 
   const now = new Date();
   const hours = now.getHours();
-  if (hours <= globalEndTime) {
+  if (hours <= time.getEndTime()) {
     setInterval(function () {
-      appIcon.setTitle('£' + getDoller());
+      appIcon.setTitle('£' + time.getRate());
     }, 10000);
   }
 
@@ -64,7 +31,7 @@ function createWindow() {
           return appIcon.setTitle('');
         }
         viewFlag = 1;
-        return appIcon.setTitle('£' + getDoller());
+        return appIcon.setTitle('£' + time.getRate());
       }
     },
     {
@@ -85,8 +52,8 @@ function createWindow() {
   ipc.on('invokeAction', function(event, data){
       //var result = processData(data);
       console.log(data);
-      setLocalStorage(data);
-      appIcon.setTitle('£' + getDoller());
+      localStorage.set(data);
+      appIcon.setTitle('£' + time.getRate());
       //event.sender.send('actionReply', result);
   });  
 }
