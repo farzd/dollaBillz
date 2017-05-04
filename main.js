@@ -73,7 +73,6 @@ function makeSettingsWindow() {
   }))
 
   //mainWindow.webContents.openDevTools()
-
   mainWindow.webContents.on('did-finish-load', () => {
     mainWindow.webContents.send('settingPageLoaded', localStorage.get())
   });
