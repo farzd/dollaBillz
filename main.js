@@ -8,18 +8,21 @@ const app = electron.app
 const iconPath = path.join(__dirname, 'oval@2x.png');
 let mainWindow
 let appIcon = null;
-
+let endTime = time.getEndTime();
+let maxRate = time.getMaxRate();
 
 function createWindow() {
   appIcon = new electron.Tray(iconPath);
-  appIcon.setTitle('£' + time.getRate());
+  appIcon.setTitle(time.getRate());
 
   const now = new Date();
   const hours = now.getHours();
-  if (hours <= time.getEndTime()) {
+  if (hours <= endTime) {
     setInterval(function () {
-      appIcon.setTitle('£' + time.getRate());
+      appIcon.setTitle(time.getRate());
     }, 10000);
+  } else {
+    appIcon.setTitle(maxRate);
   }
 
   let viewFlag = 1;
@@ -31,7 +34,7 @@ function createWindow() {
           return appIcon.setTitle('');
         }
         viewFlag = 1;
-        return appIcon.setTitle('£' + time.getRate());
+        return appIcon.setTitle(time.getRate());
       }
     },
     {
@@ -49,12 +52,10 @@ function createWindow() {
 
   appIcon.setContextMenu(contextMenu);
 
-  ipc.on('invokeAction', function(event, data){
-      //var result = processData(data);
-      console.log(data);
+  ipc.on('saveButtonPressed', function(event, data){
       localStorage.set(data);
-      appIcon.setTitle('£' + time.getRate());
-      //event.sender.send('actionReply', result);
+      endTime = time.getEndTime();
+      maxRate = time.getMaxRate();
   });  
 }
 
@@ -65,15 +66,16 @@ function makeSettingsWindow() {
     title: 'config'
   })
 
-  // and load the index.html of the app.
   mainWindow.loadURL(url.format({
     pathname: path.join(__dirname, 'index.html'),
     protocol: 'file:',
     slashes: true
   }))
 
+  //mainWindow.webContents.openDevTools()
+
   mainWindow.webContents.on('did-finish-load', () => {
-    mainWindow.webContents.send('info', 'whoooooooh!')
+    mainWindow.webContents.send('settingPageLoaded', localStorage.get())
   });
 
 
