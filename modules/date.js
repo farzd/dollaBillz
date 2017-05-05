@@ -1,54 +1,58 @@
 const localStorage = require('./storage');
 let storage = localStorage.get() || {};
 
-let totalDayRate = 400;
-let startTime = 10;
-let endTime = 18;
+let dailyrate = 400;
+let starttime = 10;
+let endtime = 18;
 let currency = '£';
+let frequency = 1;
 
-if (Object.keys(storage).length) {
-  totalDayRate = storage.dailyrate;
-  startTime = storage.starttime;
-  endTime = storage.endtime;
-  currency = storage.currency;
+function updateFromStorage() {
+    storage = localStorage.get() || {};
+    if (Object.keys(storage).length) {
+        dailyrate = storage.dailyrate;
+        starttime = storage.starttime;
+        endtime = storage.endtime;
+        currency = storage.currency;
+        frequency = storage.frequency;
+    }
 }
 
 module.exports = {
-    getRate: function() {
-        storage = localStorage.get() || {};
-        if (Object.keys(storage).length) {
-            totalDayRate = storage.dailyrate;
-            startTime = storage.starttime;
-            endTime = storage.endtime;
-            currency = storage.currency;
+    getDefaults: function() {
+        return {
+            dailyrate,
+            starttime,
+            endtime,
+            currency,
+            frequency
         }
-
-        const totalHours = Math.abs(startTime - endTime);
-        const perHourRate = totalDayRate / totalHours;
+    },
+    getRate: function() {
+        updateFromStorage();
+        const totalHours = Math.abs(starttime - endtime);
+        const perHourRate = dailyrate / totalHours;
         const perMinuteRate = perHourRate / 60;
 
         const now = new Date();
         const hours = now.getHours();
         const mins = now.getMinutes();
 
-        const elpasedHours = Math.abs(startTime - hours);
+        const elpasedHours = Math.abs(starttime - hours);
         const madeHoursSoFar = elpasedHours * perHourRate;
         const madeMinutesSoFar = mins * perMinuteRate;
-
         return currency + (madeHoursSoFar + madeMinutesSoFar).toFixed(2);
     },
     getEndTime: function() {
-        storage = localStorage.get() || {};
-         if (Object.keys(storage).length) {
-            endTime = storage.endtime;
-         }
-        return endTime;
+        updateFromStorage();
+        return endtime;
     },
     getMaxRate: function() {
-        storage = localStorage.get() || {};
-         if (Object.keys(storage).length) {
-            totalDayRate = storage.dailyrate;
-         }      
-        return totalDayRate;
+        updateFromStorage();    
+        return dailyrate;
+    },
+    getFrequency: function() {
+        updateFromStorage();
+        return frequency * 10000;
     }
 };

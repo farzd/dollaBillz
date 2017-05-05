@@ -4,13 +4,15 @@ const starttimeEl = document.getElementById('starttime');
 const endtimeEl = document.getElementById('endtime');
 const dailyrateEl = document.getElementById('dailyrate');
 const currencyEl = document.getElementById('currency');
+const frequencyEl = document.getElementById('frequency');
 
 authButton.addEventListener('click', function() {
     const starttime = starttimeEl.options[starttimeEl.selectedIndex].value;
     const endtime = endtimeEl.options[endtimeEl.selectedIndex].value;
     const dailyrate = dailyrateEl.value;
     const currency = currencyEl.value;
-    ipc.send('saveButtonPressed', {starttime, endtime, dailyrate, currency});
+    const frequency = frequencyEl.value;
+    ipc.send('saveButtonPressed', {starttime, endtime, dailyrate, currency, frequency});
 });
 
 ipc.on('settingPageLoaded' , function(event , storageData){ 
@@ -18,4 +20,5 @@ ipc.on('settingPageLoaded' , function(event , storageData){
     currencyEl.value = storageData.currency;
     starttimeEl.value = storageData.starttime;
     endtimeEl.value = storageData.endtime;
+    frequencyEl.value = storageData.frequency;
 });

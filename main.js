@@ -4,41 +4,52 @@ const url = require('url')
 const ipc = require('electron').ipcMain;
 const localStorage = require('./modules/storage');
 const time = require('./modules/date');
+
 const app = electron.app
-const iconPath = path.join(__dirname, 'oval@2x.png');
 let mainWindow
 let appIcon = null;
-let endTime = time.getEndTime();
-let maxRate = time.getMaxRate();
+let timeInterval;
 
-function createWindow() {
-  appIcon = new electron.Tray(iconPath);
+
+function updateStatus(appIcon) {
+  if (timeInterval) {
+      clearInterval(timeInterval) 
+  }
+  let endTime = time.getEndTime();
+  let maxRate = time.getMaxRate();  
+  let frequency = time.getFrequency();
+
   appIcon.setTitle(time.getRate());
 
   const now = new Date();
   const hours = now.getHours();
   if (hours <= endTime) {
-    setInterval(function () {
+    timeInterval = setInterval(function () {
       appIcon.setTitle(time.getRate());
-    }, 10000);
+    }, frequency);
   } else {
     appIcon.setTitle(maxRate);
   }
+}
 
+function createWindow() {
+  appIcon = new electron.Tray(path.join(__dirname ,'assets', 'cash@2x.png'));
+  updateStatus(appIcon);
+  
   let viewFlag = 1;
   const contextMenu = electron.Menu.buildFromTemplate([{
-      label: 'hide/show',
+      label: 'Hide/Show',
       click: function () {
         if (viewFlag == 1) {
           viewFlag = 0;
           return appIcon.setTitle('');
         }
         viewFlag = 1;
-        return appIcon.setTitle(time.getRate());
+        return updateStatus(appIcon);
       }
     },
     {
-      label: 'config',
+      label: 'Config',
       click: function () {
          makeSettingsWindow();
       }
@@ -54,8 +65,7 @@ function createWindow() {
 
   ipc.on('saveButtonPressed', function(event, data){
       localStorage.set(data);
-      endTime = time.getEndTime();
-      maxRate = time.getMaxRate();
+      updateStatus(appIcon);
   });  
 }
 
@@ -63,7 +73,8 @@ function makeSettingsWindow() {
   mainWindow = new electron.BrowserWindow({
     width: 300,
     height: 300,
-    title: 'config'
+    title: 'config',
+    resizable: false
   })
 
   mainWindow.loadURL(url.format({
@@ -74,7 +85,11 @@ function makeSettingsWindow() {
 
   //mainWindow.webContents.openDevTools()
   mainWindow.webContents.on('did-finish-load', () => {
-    mainWindow.webContents.send('settingPageLoaded', localStorage.get())
+    let defaultValues = localStorage.get() || {};
+    if (!Object.keys(defaultValues).length) {
+      defaultValues = time.getDefaults();
+    }
+    mainWindow.webContents.send('settingPageLoaded', defaultValues)
   });
 
 

@@ -8,5 +8,5 @@ module.exports = {
     },
     set: function (obj) {
         config.set(configKey, obj);
-    }    
+    }
 };
