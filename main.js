@@ -9,11 +9,11 @@ const app = electron.app
 let mainWindow
 let appIcon = null;
 let timeInterval;
-
+let viewFlag = 1;
 
 function updateStatus(appIcon) {
   if (timeInterval) {
-      clearInterval(timeInterval) 
+      clearInterval(timeInterval);
   }
   let endTime = time.getEndTime();
   let maxRate = time.getMaxRate();  
@@ -35,13 +35,13 @@ function updateStatus(appIcon) {
 function createWindow() {
   appIcon = new electron.Tray(path.join(__dirname ,'assets', 'cash@2x.png'));
   updateStatus(appIcon);
-  
-  let viewFlag = 1;
+
   const contextMenu = electron.Menu.buildFromTemplate([{
       label: 'Hide/Show',
       click: function () {
         if (viewFlag == 1) {
           viewFlag = 0;
+          clearInterval(timeInterval);
           return appIcon.setTitle('');
         }
         viewFlag = 1;
